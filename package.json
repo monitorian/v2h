@@ -1,0 +1,32 @@
+{
+  "name": "v2h",
+  "version": "0.0.1",
+  "description": "v2hはECHONET Liteプロトコルを用いてV2H(電気自動車充放電器)を制御するコマンドラインツールです",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "v2h": "index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/monitorian/v2h.git"
+  },
+  "keywords": [
+    "v2h"
+  ],
+  "author": "monitorian",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/monitorian/v2h/issues"
+  },
+  "homepage": "https://github.com/monitorian/v2h#readme",
+  "dependencies": {
+    "cac": "^6.7.14",
+    "colors": "^1.4.0",
+    "date-utils": "^1.2.21",
+    "echonet-lite": "^2.14.2",
+    "list-it": "^1.3.10"
+  }
+}
