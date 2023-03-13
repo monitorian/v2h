@@ -70,11 +70,18 @@ cli
             echonet.initialize(['05ff01'], v2hStatusMessageHandler);
             await sleep(500);
             await v2hGet(0x80);
+            await v2hGet(0x82);
+            await v2hGet(0xC2); // 車載電池の放電可能残容量1             
+            await v2hGet(0xC4); // 車載電池の放電可能残容量3   
+            await v2hGet(0xC5); // 定格充電能力             
+            await v2hGet(0xC6); // 定格放電能力                                    
             await v2hGet(0xC7); // 車両接続・充放電可否状態
-            await v2hGet(0xCD); // 車両接続確認
+            await v2hGet(0xCC); // 充電器タイプ            
             await v2hGet(0xCE); // 車載電池の充電可能容量値
             await v2hGet(0xCF); // 車載電池の充電可能残容量
             await v2hGet(0xDA); // 運転モード設定
+            await v2hGet(0xE2); // 車載電池の残容量1
+            await v2hGet(0xE4); // 車載電池の残容量3            
             await v2hGet(0xE6); // 車両ID
             await v2hGet(0x88); // 異常発生状態
             process.stdout.write("\r\x1b[K")
@@ -196,24 +203,60 @@ function v2hStatusMessageHandler(rinfo, els, err) {
 
 function showStatus(obj) {
     const pwr = obj['80'] == '30' ? redON : cyanOFF;
+    const spec_ver = obj['82'];
+    const remainingDischargeableCapacity1 = parseInt(obj['c2'], 16); 
+    const remainingDischargeableCapacity3 = parseInt(obj['c4'], 16);
+    const ratedChargeElectricPower = parseInt(obj['c5'], 16); 
+    const ratedDischargeElectricPower = parseInt(obj['c6'], 16);
     const carConnectChargeStatus = obj['c7'];
-    const carConnectStatus = obj['cd'] == '10' ? `${colors.red('接続中')}` : `${colors.cyan('未接続')}`;
-    const chargeCapacity = parseInt(obj['ce'], 16);
-    const remainChargeCapacity = parseInt(obj['ce'], 16);   
-    const v2hModeStatus = obj['da'];
-    const vehicleID = obj['e6'];
-    const emgStatus = obj['88'] == '41' ? `${colors.red.bold('YES')}` : `${colors.green('平常')}`;
+    const v2hType = (() => {
+        switch (obj['cc']){
+            case "21": return "DC_タイプAA（充電のみ）";
+            case "22": return "DC_タイプAA（充放電）";
+            case "23": return "DC_タイプAA（放電のみ）";
+            default : return "取得できず";
+        }
+    })();
+    const chargeableCapacity = parseInt(obj['ce'], 16);
+    const remainingChargeableCapacity = parseInt(obj['cf'], 16);
+    const v2hModeStatus = (() => {
+        switch (obj['da']) {
+            case "42": return "充電";
+            case "43": return "放電";
+            case "44": return "待機";
+            case "47": return "停止";
+            case "40": return "その他";                        
+            default : return "取得できず";
+        }
+    })();
+    const remainingCapacity1 = parseInt(obj['e2'], 16);
+    const remainingCapacity3 = parseInt(obj['e4'], 16);    
+    const vehicleID = (() => {
+        if((parseInt(carConnectChargeStatus, 16) >= 0x40) && (parseInt(carConnectChargeStatus, 16) <= 0x44)){
+            return obj['e6'];
+        }else{
+            return "ff";
+        }
+    })();    
+    const emgStatus = obj['88'] == '41' ? `${colors.red.bold('異常')}` : `${colors.green('平常')}`;
 
     const items = [
         ['項目名', '値'],
         ['システム電源', pwr],
         ['ステータス', emgStatus],
+        ['充電器タイプ', v2hType],
+        ['定格充電能力(W)', ratedChargeElectricPower],         
+        ['定格放電能力(W)', ratedDischargeElectricPower],                  
         ['車両接続・充放電可否状態', carConnectChargeStatus],
-        ['車両接続確認', carConnectStatus],
-        ['車載電池の充電可能容量値', chargeCapacity],
-        ['車載電池の充電可能残容量', remainChargeCapacity],
+        ['車載電池の充電可能容量値(Wh)', chargeableCapacity],
+        ['車載電池の充電可能残容量(Wh)', remainingChargeableCapacity],
         ['運転モード設定', v2hModeStatus],
+        ['車載電池の放電可能残容量(Wh)', remainingDischargeableCapacity1],         
+        ['車載電池の放電可能残容量(％)', remainingDischargeableCapacity3],        
         ['車両ID', vehicleID],
+        ['車載電池の残容量(Wh)', remainingCapacity1],         
+        ['車載電池の残容量(％)', remainingCapacity3],         
+        ['規格Version情報', spec_ver],        
     ];
     console.log(listit.setHeaderRow(items.shift()).d(items).toString());
 }
