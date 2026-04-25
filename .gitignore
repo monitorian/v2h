@@ -1,0 +1,14 @@
+node_modules/
+
+# npm test/install scratch directories
+.tmp-npm-cache/
+.tmp-npm-install-test/
+npm-cache/
+npm-install-test/
+npm-pack-test/
+
+# npm package artifacts
+*.tgz
+
+# Logs
+*.log

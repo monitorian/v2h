@@ -1,7 +1,7 @@
 {
   "name": "v2h",
-  "version": "0.0.1",
-  "description": "v2hはECHONET Liteプロトコルを用いてV2H(電気自動車充放電器)を制御するコマンドラインツールです",
+  "version": "0.0.2",
+  "description": "Node.js CLI/library for V2H devices over ECHONET Lite",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -14,7 +14,16 @@
     "url": "git+https://github.com/monitorian/v2h.git"
   },
   "keywords": [
-    "v2h"
+    "v2h",
+    "vehicle-to-home",
+    "ev",
+    "ev-charging",
+    "echonet",
+    "echonet-lite",
+    "hems",
+    "smart-home",
+    "nichicon",
+    "japan"
   ],
   "author": "monitorian",
   "license": "MIT",

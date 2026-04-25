@@ -1,0 +1,10 @@
+.git
+.gitinit
+.tmp-npm-cache
+.tmp-npm-install-test
+npm-cache
+npm-install-test
+npm-pack-test
+node_modules
+*.log
+*.tgz

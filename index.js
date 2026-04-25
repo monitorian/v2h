@@ -42,6 +42,7 @@ const config = JSON.parse(fs.readFileSync(configPath));
 const controllerObjectId = [0x0e, 0xf0, 0x01]; //コントローラ
 const bathControllerObjectId = [0x02, 0x7e, 0x01]; //V2H
 const responseResultObj = {};
+const discoveredV2hDevices = {};
 
 cli
     .command('on', 'V2HをONにします。')
@@ -60,6 +61,57 @@ cli
 cli.command('send-el <deoj> <esv> <property> [...value]')
     .action((deoj, esv, property, value) => {
         echonetSend(deoj, esv, property, value[0]);
+    });
+
+cli
+    .command('discover', 'Discover V2H devices on the local ECHONET Lite network.')
+    .option('--timeout <ms>', 'Discovery timeout in milliseconds.', {
+        default: 5000,
+    })
+    .option('--ip <address>', 'Also probe a specific IP address directly.')
+    .option('--save', 'Save the first discovered V2H IP address to the config file.')
+    .action((options) => {
+        (async () => {
+            const timeout = parsePositiveInt(options.timeout, 5000);
+            const probeIp = options.ip || getConfiguredProbeIp();
+            process.stdout.write(`V2H devices discovering for ${timeout}ms...`);
+
+            echonet.initialize(['05ff01'], v2hDiscoverMessageHandler, 4, {
+                ignoreMe: true,
+                autoGetProperties: true,
+                autoGetDelay: 500,
+                debugMode: false,
+            });
+
+            await sleep(500);
+            echonet.search();
+            if (probeIp) {
+                probeV2hDevice(probeIp);
+            }
+            await sleep(timeout);
+            process.stdout.write("\r\x1b[K")
+
+            collectDiscoveredV2hDevicesFromFacilities();
+            const devices = Object.values(discoveredV2hDevices);
+
+            if (typeof echonet.release === 'function') {
+                echonet.release();
+            }
+
+            if (devices.length === 0) {
+                console.log('V2H devices were not found.');
+                process.exit(1);
+            }
+
+            showDiscoveredV2hDevices(devices);
+
+            if (options.save) {
+                saveConfigIp(devices[0].ip);
+                console.log(`Saved ${devices[0].ip} to ${configPath}`);
+            }
+
+            process.exit();
+        })();
     });
 
 cli
@@ -189,6 +241,11 @@ async function v2hGet(item) {
     await sleep(50);
 }
 
+function probeV2hDevice(ip) {
+    echonet.sendOPC1(ip, controllerObjectId, bathControllerObjectId, echonet.GET, 0x80);
+    echonet.sendOPC1(ip, controllerObjectId, bathControllerObjectId, echonet.GET, 0x82);
+}
+
 function v2hStatusMessageHandler(rinfo, els, err) {
     if (err) {
         console.dir(err);
@@ -199,6 +256,100 @@ function v2hStatusMessageHandler(rinfo, els, err) {
             responseResultObj[key] = val;
         }
     }
+}
+
+function v2hDiscoverMessageHandler(rinfo, els, err) {
+    if (err || !rinfo || !els) {
+        return;
+    }
+
+    collectDiscoveredV2hDeviceFromMessage(rinfo.address, els);
+}
+
+function collectDiscoveredV2hDeviceFromMessage(ip, els) {
+    if (els['SEOJ'] && els['SEOJ'].toLowerCase().startsWith('027e')) {
+        addDiscoveredV2hDevice(ip, els['SEOJ']);
+    }
+
+    if (!els['DETAILs']) {
+        return;
+    }
+
+    ['d5', 'd6'].forEach((epc) => {
+        const value = els['DETAILs'][epc];
+        extractV2hObjectIds(value).forEach((objectId) => {
+            addDiscoveredV2hDevice(ip, objectId);
+        });
+    });
+}
+
+function collectDiscoveredV2hDevicesFromFacilities() {
+    Object.keys(echonet.facilities || {}).forEach((ip) => {
+        Object.keys(echonet.facilities[ip] || {}).forEach((objectId) => {
+            if (objectId.toLowerCase().startsWith('027e')) {
+                addDiscoveredV2hDevice(ip, objectId);
+                return;
+            }
+
+            ['d5', 'd6'].forEach((epc) => {
+                const value = echonet.facilities[ip][objectId][epc];
+                extractV2hObjectIds(value).forEach((v2hObjectId) => {
+                    addDiscoveredV2hDevice(ip, v2hObjectId);
+                });
+            });
+        });
+    });
+}
+
+function extractV2hObjectIds(instanceList) {
+    if (typeof instanceList !== 'string' || instanceList.length < 8) {
+        return [];
+    }
+
+    const objectIds = [];
+    const count = parseInt(instanceList.substr(0, 2), 16);
+
+    for (let i = 0; i < count; i++) {
+        const objectId = instanceList.substr(2 + i * 6, 6).toLowerCase();
+        if (objectId.startsWith('027e')) {
+            objectIds.push(objectId);
+        }
+    }
+
+    return objectIds;
+}
+
+function addDiscoveredV2hDevice(ip, objectId) {
+    const key = `${ip}/${objectId.toLowerCase()}`;
+    discoveredV2hDevices[key] = {
+        ip,
+        objectId: objectId.toLowerCase(),
+    };
+}
+
+function showDiscoveredV2hDevices(devices) {
+    const items = [
+        ['IP address', 'Object ID'],
+        ...devices.map((device) => [device.ip, device.objectId]),
+    ];
+    console.log(listit.setHeaderRow(items.shift()).d(items).toString());
+}
+
+function saveConfigIp(ip) {
+    fs.writeFileSync(configPath, `${JSON.stringify({ ip })}\n`);
+}
+
+function getConfiguredProbeIp() {
+    if (!config.ip || config.ip === '192.0.2.0') {
+        return null;
+    }
+
+    return config.ip;
+}
+
+function parsePositiveInt(value, fallback) {
+    const parsed = parseInt(value, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 function showStatus(obj) {
