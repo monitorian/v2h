@@ -4,7 +4,7 @@
   "description": "Node.js CLI/library for V2H devices over ECHONET Lite",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --check index.js"
   },
   "bin": {
     "v2h": "index.js"
