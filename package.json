@@ -1,6 +1,6 @@
 {
   "name": "v2h",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Node.js CLI/library for V2H devices over ECHONET Lite",
   "main": "index.js",
   "scripts": {
