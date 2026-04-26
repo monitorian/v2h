@@ -1,13 +1,16 @@
 {
   "name": "v2h",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Node.js CLI/library for V2H devices over ECHONET Lite",
   "main": "index.js",
   "scripts": {
-    "test": "node --check index.js"
+    "test": "node --check index.js && node --check cli.js"
   },
   "bin": {
-    "v2h": "index.js"
+    "v2h": "cli.js"
+  },
+  "exports": {
+    ".": "./index.js"
   },
   "repository": {
     "type": "git",

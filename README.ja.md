@@ -35,7 +35,7 @@ v2h discover --save
 既知のIPアドレスを直接確認したい場合は、`--ip` を指定します。
 
 ```bash
-v2h discover --ip 192.168.0.158
+v2h discover --ip V2H_IP_ADDRESS
 ```
 
 ## ステータス確認

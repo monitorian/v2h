@@ -20,6 +20,20 @@ npm install v2h
 npx v2h discover
 ```
 
+```js
+const { getStatus, discover } = require('v2h');
+
+const status = await getStatus({
+  ip: 'V2H_IP_ADDRESS',
+  timeoutMs: 2500,
+});
+
+const devices = await discover({
+  timeoutMs: 5000,
+  probeIp: 'V2H_IP_ADDRESS',
+});
+```
+
 ## Supported devices
 Nichicon V2H: experimental / tested by maintainer
 Other ECHONET Lite V2H devices: not yet confirmed
