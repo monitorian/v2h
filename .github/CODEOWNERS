@@ -1,0 +1,15 @@
+# Core safety
+AGENTS.md                         @monitorian
+.github/CODEOWNERS                @monitorian
+.github/workflows/*               @monitorian
+.github/pull_request_template.md  @monitorian
+
+# Safety scripts
+scripts/*                         @monitorian
+
+# Hardware control
+src/**                            @monitorian
+
+# systemd / service control
+*.service                         @monitorian
+systemd/**                        @monitorian
