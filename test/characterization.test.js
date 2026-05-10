@@ -117,6 +117,16 @@ test('formatDiscoveredDevices: stable table output', () => {
   });
 });
 
+test('formatDiscoveredDevices: keeps stable column order (fixture-only)', () => {
+  const output = stripAnsi(formatDiscoveredDevices([
+    { ip: '198.51.100.1', objectId: '0ef001' },
+  ]));
+  const normalized = normalizeDynamicTableValues(output);
+  const lines = normalized.split('\n').map((line) => line.trim()).filter(Boolean);
+
+  assert.match(lines[0], /^IP address\s+Object ID$/);
+});
+
 test('formatStatus: stable table output for known values', () => {
   const status = {
     table: {
