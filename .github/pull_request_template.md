@@ -1,5 +1,10 @@
 ## Summary（変更概要）
 
+## Security Note
+- [ ] No internal links included
+- [ ] No Codex task links included
+- [ ] No secrets or environment-specific info included
+
 ## CI Checks（CI確認）
 - [ ] build
 - [ ] test
