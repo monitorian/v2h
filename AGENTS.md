@@ -39,3 +39,13 @@ CI cannot validate:
 - charging safety
 - electrical safety
 - real timing stability
+
+Do not include Codex task links, internal task IDs, or agent session links in PR descriptions.
+
+For public repositories, PR descriptions must contain only review-relevant information:
+- Summary
+- CI results
+- Hardware impact
+- Real hardware verification
+- Human review points
+- CI limitations
