@@ -5,7 +5,7 @@ const path = require('path');
 const colors = require('colors');
 const cli = require('cac')();
 
-const { discover, getStatus } = require('./');
+const { controlV2h, discover, getControlSnapshot, getStatus } = require('./');
 const { formatDiscoveredDevices, formatStatus } = require('./lib/format');
 const {
     controllerObjectId,
@@ -101,14 +101,104 @@ cli
     .option('--timeout <ms>', 'Status timeout in milliseconds.', {
         default: 2500,
     })
+    .option('--interval <ms>', 'Delay between ECHONET Lite requests.', {
+        default: 50,
+    })
+    .option('--probe-connection', 'Send one vehicle connection check (EPC 0xCD=0x10) before reading status.')
+    .option('--probe-delay <ms>', 'Delay after vehicle connection check before reading status.', {
+        default: 5000,
+    })
     .action(async (options) => {
         try {
             const ip = options.ip || requireConfiguredIp();
             const timeoutMs = parsePositiveInt(options.timeout, 2500);
             process.stdout.write('V2Hの設定値を取得中……');
-            const status = await getStatus({ ip, timeoutMs });
+            const status = await getStatus({
+                ip,
+                timeoutMs,
+                commandIntervalMs: parsePositiveInt(options.interval, 50),
+                probeConnection: Boolean(options.probeConnection),
+                connectionProbeDelayMs: parsePositiveInt(options.probeDelay, 5000),
+            });
             process.stdout.write('\r\x1b[K');
             console.log(formatStatus(status));
+        } catch (err) {
+            fail(err);
+        }
+    });
+
+cli
+    .command('control-status', 'Show the V2H control precheck state.')
+    .option('--ip <address>', 'V2H IP address. Defaults to ~/.v2h.config.json.')
+    .option('--object-id <id>', 'ECHONET Lite object ID.', {
+        default: '027e01',
+    })
+    .option('--timeout <ms>', 'Per-request timeout in milliseconds.', {
+        default: 2500,
+    })
+    .option('--interval <ms>', 'Delay between ECHONET Lite requests.', {
+        default: 250,
+    })
+    .option('--probe-connection', 'Send one vehicle connection check (EPC 0xCD=0x10) before reading status.')
+    .option('--probe-delay <ms>', 'Delay after vehicle connection check before reading status.', {
+        default: 5000,
+    })
+    .action(async (options) => {
+        try {
+            const snapshot = await getControlSnapshot({
+                ip: options.ip || requireConfiguredIp(),
+                objectId: options.objectId,
+                timeoutMs: parsePositiveInt(options.timeout, 2500),
+                commandIntervalMs: parsePositiveInt(options.interval, 250),
+                probeConnection: Boolean(options.probeConnection),
+                connectionProbeDelayMs: parsePositiveInt(options.probeDelay, 5000),
+            });
+            console.log(JSON.stringify(snapshot, null, 2));
+        } catch (err) {
+            fail(err);
+        }
+    });
+
+cli
+    .command('control <mode>', 'Dry-run or execute a safe V2H control command: charge, discharge, standby, stop.')
+    .option('--ip <address>', 'V2H IP address. Defaults to ~/.v2h.config.json.')
+    .option('--object-id <id>', 'ECHONET Lite object ID.', {
+        default: '027e01',
+    })
+    .option('--execute', 'Actually send SetC. Without this option, only a dry-run precheck is performed.')
+    .option('--timeout <ms>', 'Per-request timeout in milliseconds.', {
+        default: 2500,
+    })
+    .option('--interval <ms>', 'Delay between ECHONET Lite requests.', {
+        default: 250,
+    })
+    .option('--confirm-delay <ms>', 'Delay before reading back the operation mode after SetC.', {
+        default: 2000,
+    })
+    .option('--probe-connection', 'Send one vehicle connection check (EPC 0xCD=0x10) before safety validation.')
+    .option('--probe-delay <ms>', 'Delay after vehicle connection check before safety validation.', {
+        default: 5000,
+    })
+    .action(async (mode, options) => {
+        try {
+            const result = await controlV2h({
+                ip: options.ip || requireConfiguredIp(),
+                objectId: options.objectId,
+                mode,
+                execute: Boolean(options.execute),
+                timeoutMs: parsePositiveInt(options.timeout, 2500),
+                commandIntervalMs: parsePositiveInt(options.interval, 250),
+                confirmDelayMs: parsePositiveInt(options.confirmDelay, 2000),
+                probeConnection: Boolean(options.probeConnection),
+                connectionProbeDelayMs: parsePositiveInt(options.probeDelay, 5000),
+            });
+            console.log(JSON.stringify(result, null, 2));
+
+            if (!result.safety.allowed) {
+                process.exitCode = 2;
+            } else if (result.setResponse && !result.setResponse.ok) {
+                process.exitCode = 3;
+            }
         } catch (err) {
             fail(err);
         }

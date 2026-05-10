@@ -8,6 +8,7 @@ const EXCLUDE_DIRS = new Set(['.git', 'node_modules']);
 
 const ALLOWED_ECHONET_FILES = new Set([
   path.normalize('lib/common.js'),
+  path.normalize('lib/control.js'),
   path.normalize('lib/discover.js'),
   path.normalize('lib/status.js'),
   path.normalize('cli.js'),
