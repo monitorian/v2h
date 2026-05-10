@@ -4,7 +4,7 @@
   "description": "Node.js CLI/library for V2H devices over ECHONET Lite",
   "main": "index.js",
   "scripts": {
-    "test": "node --check index.js && node --check cli.js",
+    "test": "node --check index.js && node --check cli.js && node --test",
     "lint": "node --check index.js && node --check cli.js && node --check lib/common.js && node --check lib/discover.js && node --check lib/status.js && node --check lib/format.js",
     "typecheck": "node --check index.js && node --check cli.js && node --check lib/common.js && node --check lib/discover.js && node --check lib/status.js && node --check lib/format.js && node --check scripts/safety-checks.js",
     "build": "npm pack --dry-run",
